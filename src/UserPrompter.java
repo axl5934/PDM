@@ -3,7 +3,7 @@ import java.util.Scanner;
 
 public class UserPrompter {
 
-    private final String URL = "who knows";
+    private final String URL = "jdbc:postgresql://reddwarf/?currentSchema=";//WHAT IS THE ADDRESS OF THE POSTGRESQL DATABASE???????
     private Connection connection;
 
     private Scanner scanner;
@@ -42,7 +42,8 @@ public class UserPrompter {
         Person.UserType userType;
         int userID;
         while(true) {
-            System.out.println("Enter user type: ");
+            System.out.println("Enter user type (\"agent\", " +
+                    "\"customer\", or \"agent\": ");
             String type = this.scanner.nextLine();
             userType = Person.UserType.valueOf(type);
 
@@ -61,14 +62,16 @@ public class UserPrompter {
             }
         }
 
-        this.person = new Person(userID, userType);
-
+        this.person = Person.createPerson(userID, userType);
     }
 
-    boolean prompt() throws SQLException{
-        String prompt = this.scanner.nextLine();
-
-        return true;
+    void prompt() throws SQLException{
+        String query;
+        do {
+            System.out.println(">> ");
+            query = this.scanner.nextLine();
+            this.person.processQuery(query);
+        } while(query.compareTo("quit") != 0);
     }
 
     void logOut() throws SQLException{
@@ -78,13 +81,10 @@ public class UserPrompter {
     public static void main(String args[]){
         UserPrompter prompter = new UserPrompter();
 
-        boolean contPrompt = true;
-        while(contPrompt){
-            try{
-                contPrompt = prompter.prompt();
-            } catch(SQLException ex){
-                System.out.println(ex.getMessage());
-            }
+        try{
+            prompter.prompt();
+        } catch(SQLException ex){
+            System.out.println(ex.getMessage());
         }
 
         try{
