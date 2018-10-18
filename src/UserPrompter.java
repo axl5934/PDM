@@ -2,21 +2,6 @@ import java.sql.*;
 import java.util.Scanner;
 
 public class UserPrompter {
-    enum UserType{
-        AGENT("agent"),
-        CUSTOMER("customer"),
-        MANAGER("manager");
-
-        private final String type;
-
-        UserType(final String type){
-            this.type = type;
-        }
-
-        public String toString(){
-            return this.type;
-        }
-    }
 
     private final String URL = "who knows";
     private Connection connection;
