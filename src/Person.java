@@ -31,4 +31,6 @@ public class Person {
     public UserType getUserType(){
         return this.userType;
     }
+
+    public Manager(){}
 }

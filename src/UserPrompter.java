@@ -8,7 +8,7 @@ public class UserPrompter {
 
     private Scanner scanner;
     private QueryReader reader;
-    private QueryWriter writer;
+    private QueryProcessor writer;
     private TableParser parser;
 
     private final int ID_LENGTH = 8;
@@ -18,7 +18,7 @@ public class UserPrompter {
 
     UserPrompter(){
         this.reader = new QueryReader();
-        this.writer = new QueryWriter();
+        this.writer = new QueryProcessor();
         this.parser = new TableParser();
 
         this.scanner = new Scanner(System.in);
