@@ -8,7 +8,7 @@ public class QueryProcessor {
         this.connection = connection;
     }
 
-    ResultSet checkUserInTable(int userId, Person.UserType userType){
+    boolean checkUserInTable(int userId, Person.UserType userType){
         PreparedStatement prepSt = null;
         ResultSet rs = null;
         try{
@@ -32,5 +32,8 @@ public class QueryProcessor {
             }
 
         }
+
+        return false;
     }
+
 }
