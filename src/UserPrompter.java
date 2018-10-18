@@ -2,13 +2,42 @@ import java.sql.*;
 import java.util.Scanner;
 
 public class UserPrompter {
+    enum UserType{
+        AGENT("agent"),
+        CUSTOMER("customer"),
+        MANAGER("manager");
+
+        private final String type;
+
+        UserType(final String type){
+            this.type = type;
+        }
+
+        public String toString(){
+            return this.type;
+        }
+    }
+
     private final String URL = "who knows";
     private Connection connection;
 
+    private Scanner scanner;
+    private QueryReader reader;
+    private QueryWriter writer;
+    private TableParser parser;
+
     private final int ID_LENGTH = 8;
     private int userID;
+    private UserType userType;
+    private Person person;
 
     UserPrompter(){
+        this.reader = new QueryReader();
+        this.writer = new QueryWriter();
+        this.parser = new TableParser();
+
+        this.scanner = new Scanner(System.in);
+
         boolean logInSuccess = false;
         while(!logInSuccess){
             try{
@@ -21,41 +50,67 @@ public class UserPrompter {
     }
 
     void logIn() throws SQLException{
-        //get user credentials
-        Scanner sc = new Scanner(System.in);
-
         System.out.println("Enter user ID: ");
-        String username = sc.nextLine();
+        String username = this.scanner.nextLine();
 
         System.out.println("Enter password: ");
-        String password = sc.nextLine();
+        String password = this.scanner.nextLine();
 
         //try to connect to sql
         this.connection = DriverManager.getConnection(this.URL,
                             username, password);
 
-        //close scanner
-        sc.close();
+        while(true) {
+            System.out.println("Enter user type: ");
+            String userType = this.scanner.nextLine();
+            this.userType = UserType.valueOf(userType);
+
+            System.out.println("Enter user ID: ");
+            this.userID = this.scanner.nextInt();
+            if (String.valueOf(this.userID).length() != ID_LENGTH) {
+                System.out.println("Error: user ID must be 8 digits long.");
+                continue;
+            }
+
+            if(!this.writer.checkUserInTable(this.userID)){
+                System.out.println("No " + this.userType + " with given user ID.");
+            }
+            else{
+                break;
+            }
+        }
+
+        this.person = new Person(this.userID, this.userType);
     }
 
-    boolean prompt(){
+    boolean prompt() throws SQLException{
+        String prompt = this.scanner.nextLine();
+
         return true;
     }
 
-    boolean logOut() {
-        return true;
+    void logOut() throws SQLException{
+        this.connection.close();
     }
 
     public static void main(String args[]){
         UserPrompter prompter = new UserPrompter();
 
-        while(prompter.prompt()){
-            //keep prompting until the user
-            //asks to stop prompting
+        boolean contPrompt = true;
+        while(contPrompt){
+            try{
+                contPrompt = prompter.prompt();
+            } catch(SQLException ex){
+                System.out.println(ex.getMessage());
+            }
         }
 
-        if(!prompter.logOut()){
-            //something went wrong while logging out
+        try{
+            prompter.logOut();
+        } catch(SQLException ex){
+            System.out.println(ex.getMessage());
         }
+
+        prompter.scanner.close();
     }
 }
