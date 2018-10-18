@@ -16,9 +16,22 @@ public class QueryProcessor {
             prepSt = this.connection.prepareStatement("SELECT userID FROM "
                     + userType + " WHERE userID = " + userId + ";");
             rs = prepSt.executeQuery();
+            this.connection.commit();
 
-        } catch(SQLException ex){
-            //squash
+            if(rs.next()){
+                return true;
+            }
+            else{
+                return false;
+            }
+
+
+        } catch(SQLException ex1){
+            try {
+                this.connection.rollback();
+            } catch (SQLException ex2){
+                //squash
+            }
         } finally{
             try {
                 if (prepSt != null) {
@@ -27,7 +40,7 @@ public class QueryProcessor {
                 if (rs != null) {
                     rs.close();
                 }
-            } catch (SQLException ex){
+            } catch (SQLException ex3){
                 //squash
             }
 
