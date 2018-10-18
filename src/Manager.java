@@ -1,6 +1,10 @@
 public class Manager extends Person{
 
-    Manager(){
+    Manager(int userId){
+        this.setUserId(userId);
+    }
+
+    void processQuery(String query){
 
     }
 }
