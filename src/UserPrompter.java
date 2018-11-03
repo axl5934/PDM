@@ -3,7 +3,8 @@ import java.util.Scanner;
 
 public class UserPrompter {
 
-    private final String URL = "jdbc:postgresql://reddwarf/?currentSchema=";//WHAT IS THE ADDRESS OF THE POSTGRESQL DATABASE???????
+    private final String URL = "jdbc:postgresql://reddwarf.cs.rit.edu/?currentSchema=public";
+
     private Connection connection;
 
     private Scanner scanner;
@@ -13,9 +14,24 @@ public class UserPrompter {
     private Person person;
 
     UserPrompter(){
+        this.scanner = new Scanner(System.in);
+
+        System.out.println("Enter user ID: ");
+        String username = this.scanner.nextLine();
+
+        System.out.println("Enter password: ");
+        String password = this.scanner.nextLine();
+
+        //try to connect to sql
+        try {
+            this.connection = DriverManager.getConnection(this.URL,
+                    username, password);
+        } catch(SQLException ex){
+            System.out.println(ex.getMessage());
+        }
+
         this.processor = new QueryProcessor(this.connection);
 
-        this.scanner = new Scanner(System.in);
 
         boolean logInSuccess = false;
         while(!logInSuccess){
@@ -29,21 +45,11 @@ public class UserPrompter {
     }
 
     void logIn() throws SQLException{
-        System.out.println("Enter user ID: ");
-        String username = this.scanner.nextLine();
-
-        System.out.println("Enter password: ");
-        String password = this.scanner.nextLine();
-
-        //try to connect to sql
-        this.connection = DriverManager.getConnection(this.URL,
-                            username, password);
-
         Person.UserType userType;
         int userID;
         while(true) {
-            System.out.println("Enter user type (\"agent\", " +
-                    "\"customer\", or \"agent\": ");
+            System.out.println("Enter user type (\"AGENT\", " +
+                    "\"CUSTOMER\", or \"MANAGER\": ");
             String type = this.scanner.nextLine();
             userType = Person.UserType.valueOf(type);
 

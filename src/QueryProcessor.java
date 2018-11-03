@@ -2,12 +2,6 @@ import java.sql.*;
 
 public class QueryProcessor {
 
-    Connection connection;
-
-    QueryProcessor(Connection connection){
-        this.connection = connection;
-    }
-
     enum State{
         AL("Alabama"), AK("Alaska"), AZ("Arizona"), AR("Arkansas"), CA("California"),
         CO("Colorado"), CT("Connecticut"), DE("Delaware"), FL("Florida"), GA("Georgia"),
@@ -31,15 +25,26 @@ public class QueryProcessor {
         }
     }
 
+    private Connection connection;
+
+    QueryProcessor(Connection connection){
+        this.connection = connection;
+    }
+
+    void processQuery(String prompt){
+
+    }
+
+
     boolean checkUserInTable(int userId, Person.UserType userType){
         PreparedStatement prepSt = null;
         ResultSet rs = null;
         try{
-            this.connection.setAutoCommit(false);
-            prepSt = this.connection.prepareStatement("SELECT userID FROM "
-                    + userType + " WHERE userID = " + userId + ";");
+            prepSt = this.connection.prepareStatement("SELECT ?ID FROM "
+                    + userType + " WHERE userID = ?;");
+            prepSt.setString(1, userType.toString());
+            prepSt.setString(2, Integer.toString(userId));
             rs = prepSt.executeQuery();
-            this.connection.commit();
 
             if(rs.next()){
                 return true;
@@ -47,14 +52,8 @@ public class QueryProcessor {
             else{
                 return false;
             }
-
-
         } catch(SQLException ex1){
-            try {
-                this.connection.rollback();
-            } catch (SQLException ex2){
-                //squash
-            }
+            System.out.println(ex1.getMessage());
         } finally{
             try {
                 if (prepSt != null) {
@@ -64,116 +63,39 @@ public class QueryProcessor {
                     rs.close();
                 }
             } catch (SQLException ex3){
-                //squash
+                System.out.println(ex3.getMessage());
             }
-
         }
 
         return false;
     }
 
-    void processQuery(String prompt){
-
-    }
-
-    void filterByPrice(float price, String operator){
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
-        try{
-            this.connection.setAutoCommit(false);
-            prepSt = this.connection.prepareStatement("SELECT price FROM property WHERE " +
-                    "price " + operator + " " + price + ";"); //update later for multiple operators
-            rs = prepSt.executeQuery();
-            this.connection.commit();
-
-            if(!rs.next()){
-                System.out.println("No listings found");
-            }
-            while(rs.next()){
-                System.out.println(rs.getString("price"));
-            }
-
-
-        } catch(SQLException ex1){
-            try {
-                this.connection.rollback();
-            } catch (SQLException ex2){
-                //squash
-            }
-        } finally{
-            try {
-                if (prepSt != null) {
-                    prepSt.close();
-                }
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ex3){
-                //squash
-            }
-
-        }
-    }
 
     void displayProperty(String conditions[]){
-        String statement = "SELECT * FROM Property Where ";
-        for(int i = 0; i < conditions.length; i++){
-            statement += conditions[i] = " and ";
+        String statement = "SELECT * FROM Property Where ?";
+        for(int i = 1; i < conditions.length; i++){
+            statement += " and ?";
         }
         statement += ";";
         PreparedStatement prepSt = null;
         ResultSet rs = null;
         try{
-            this.connection.setAutoCommit(false);
             prepSt = this.connection.prepareStatement(statement);
-
-            rs = prepSt.executeQuery();
-            this.connection.commit();
-        } catch(SQLException ex1){
-            try {
-                this.connection.rollback();
-            } catch (SQLException ex2){
-                //squash
-            }
-        } finally{
-            try {
-                if (prepSt != null) {
-                    prepSt.close();
-                }
-                if (rs != null) {
-                    rs.close();
-                }
-            } catch (SQLException ex3){
-                //squash
+            for(int i=0; i<conditions.length; i++){
+                prepSt.setString(i, conditions[i]);
             }
 
-        }
-    }
-
-    void filterByState(State state, String operator){
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
-        try{
-            this.connection.setAutoCommit(false);
-            prepSt = this.connection.prepareStatement("SELECT state FROM address WHERE " +
-                    "state " + operator + " " + state + ";"); //update later for multiple operators or states
             rs = prepSt.executeQuery();
-            this.connection.commit();
 
             if(!rs.next()){
                 System.out.println("No listings found");
             }
             while(rs.next()){
-                System.out.println(rs.getString("state"));
+                //print row
             }
-
 
         } catch(SQLException ex1){
-            try {
-                this.connection.rollback();
-            } catch (SQLException ex2){
-                //squash
-            }
+            //catch
         } finally{
             try {
                 if (prepSt != null) {
