@@ -6,92 +6,69 @@ public class UserPrompter {
     private final String URL = "jdbc:postgresql://reddwarf.cs.rit.edu/?currentSchema=public";
 
     private Connection connection;
-
     private Scanner scanner;
     private QueryProcessor processor;
-
-    private final int ID_LENGTH = 8;
-    private Person person;
 
     UserPrompter(){
         this.scanner = new Scanner(System.in);
 
-        System.out.println("Enter user ID: ");
-        String username = this.scanner.nextLine();
+        this.connection = null;
+        while(this.connection == null) {
+            System.out.print("Enter username: ");
+            String username = this.scanner.nextLine();
 
-        System.out.println("Enter password: ");
-        String password = this.scanner.nextLine();
+            System.out.print("Enter password: ");
+            String password = this.scanner.nextLine();
 
-        //try to connect to sql
-        try {
-            this.connection = DriverManager.getConnection(this.URL,
-                    username, password);
-        } catch(SQLException ex){
-            System.out.println(ex.getMessage());
-        }
-
-        this.processor = new QueryProcessor(this.connection);
-
-
-        boolean logInSuccess = false;
-        while(!logInSuccess){
-            try{
-                this.logIn();
-                logInSuccess = true;
-            } catch(SQLException ex){
-                System.out.println(ex.getMessage());
-            }
-        }
-    }
-
-    void logIn() throws SQLException{
-        Person.UserType userType;
-        int userID;
-        while(true) {
-            System.out.println("Enter user type (\"AGENT\", " +
-                    "\"CUSTOMER\", or \"MANAGER\": ");
-            String type = this.scanner.nextLine();
-            userType = Person.UserType.valueOf(type);
-
-            System.out.println("Enter user ID: ");
-            userID = this.scanner.nextInt();
-            if (String.valueOf(userID).length() != ID_LENGTH) {
-                System.out.println("Error: user ID must be 8 digits long.");
-                continue;
-            }
-
-            if(this.processor.checkUserInTable(userID, userType)){
-                System.out.println("No " + userType + " with given user ID.");
-            }
-            else{
+            //try to connect to sql
+            try {
+                this.connection = DriverManager.getConnection(this.URL,
+                        username, password);
                 break;
+            } catch (SQLException ex) {
+                System.out.println(ex.getMessage());
+                this.connection = null;
             }
         }
 
-        this.person = Person.createPerson(userID, userType);
+        UserType userType;
+        while(true) {
+            System.out.print("Enter user type (\"AGENT\", " +
+                    "\"CUSTOMER\", or \"MANAGER\"): ");
+            String type = this.scanner.nextLine();
+            try {
+                userType = UserType.valueOf(type);
+                break;
+            } catch(Exception ex){
+                System.out.println("Error: invalid user type.");
+            }
+        }
+
+        this.processor = new QueryProcessor(this.connection, userType);
     }
 
-    void prompt() throws SQLException{
+
+    void prompt(){
         String query;
         do {
-            System.out.println(">> ");
+            System.out.print(">> ");
             query = this.scanner.nextLine();
-            this.person.processQuery(query);
-        } while(query.compareTo("quit") != 0);
+            if(query.compareTo("quit") == 0){
+                break;
+            }
+            this.processor.processQuery(query);
+        } while(true);
     }
+
 
     void logOut() throws SQLException{
         this.connection.close();
     }
 
+
     public static void main(String args[]){
         UserPrompter prompter = new UserPrompter();
-
-        try{
-            prompter.prompt();
-        } catch(SQLException ex){
-            System.out.println(ex.getMessage());
-        }
+        prompter.prompt();
 
         try{
             prompter.logOut();

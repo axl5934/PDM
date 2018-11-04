@@ -1,88 +1,195 @@
 import java.sql.*;
+import java.util.Arrays;
 
 public class QueryProcessor {
 
-    enum State{
-        AL("Alabama"), AK("Alaska"), AZ("Arizona"), AR("Arkansas"), CA("California"),
-        CO("Colorado"), CT("Connecticut"), DE("Delaware"), FL("Florida"), GA("Georgia"),
-        HI("Hawaii"), ID("Idaho"), IL("Illinois"), IN("Indiana"), IA("Iowa"),
-        KS("Kansas"), KY("Kentucky"), LA("Louisiana"), ME("Maine"), MD("Maryland"),
-        MA("Massachussetts"), MI("Michigan"), MN("Minnesota"), MS("Mississippi"), MO("Missouri"),
-        MT("Montana"), NE("Nebraska"), NV("Nevada"), NH("New Hampshire"), NJ("New Jersey"),
-        NM("New Mexico"), NY("New York"), NC("North Carolina"), ND("North Dakota"), OH("Ohio"),
-        OK("Oklahoma"), OR("Oregon"), PA("Pennsylvania"), RI("Rhode Island"), SC("South Carolina"),
-        SD("South Dakota"), TN("Tennessee"), TX("Texas"), UT("Utah"), VT("Vermont"),
-        VA("Virginia"), WA("Washington"), WV("West Virginia"), WI("Wisconsin"), WY("Wyoming");
-
-        private final String name;
-
-        State(final String name){
-            this.name = name;
-        }
-
-        public String toString(){
-            return this.name;
-        }
-    }
-
+    private final UserType userType;
     private Connection connection;
 
-    QueryProcessor(Connection connection){
+
+    QueryProcessor(Connection connection, UserType userType){
         this.connection = connection;
-    }
-
-    void processQuery(String prompt){
-
+        this.userType = userType;
     }
 
 
-    boolean checkUserInTable(int userId, Person.UserType userType){
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
-        try{
-            prepSt = this.connection.prepareStatement("SELECT ?ID FROM "
-                    + userType + " WHERE userID = ?;");
-            prepSt.setString(1, userType.toString());
-            prepSt.setString(2, Integer.toString(userId));
-            rs = prepSt.executeQuery();
+    void processQuery(String prompt) {
+        String[] tokens = prompt.split(" ");
+        String[] options;
+        if(tokens.length > 1) {
+            options = Arrays.copyOfRange(tokens, 1, tokens.length);
+        }
+        else{
+            options = null;
+        }
 
-            if(rs.next()){
-                return true;
-            }
-            else{
-                return false;
-            }
-        } catch(SQLException ex1){
-            System.out.println(ex1.getMessage());
-        } finally{
-            try {
-                if (prepSt != null) {
-                    prepSt.close();
+        switch(tokens[0]){
+            case "dproperty":
+                displayProperty(options);
+                break;
+            case "lproperty":
+                listProperty(options);
+                break;
+            case "dsale":
+                displaySale(options);
+                break;
+            case "close":
+                close(options);
+                break;
+            case "rgsoffer":
+                registerOffer(options);
+                break;
+            case "uoffer":
+                updateOffer(options);
+                break;
+            case "rmvoffer":
+                removeOffer(options);
+                break;
+            case "rgsconnection":
+                registerConnection(options);
+                break;
+            case "uconnection":
+                updateConnection(options);
+                break;
+            case "rmvConnection":
+                removeConnection(options);
+                break;
+            default:
+                System.out.println("Error: unknown command");
+                break;
+        }
+
+    }
+
+
+    boolean checkPermissions(UserType userType, String action){
+        if(this.userType != userType){
+            System.out.println("Error: " + this.userType.toString() +
+                    "cannot use " + action  + ".");
+            return false;
+        }
+
+        return true;
+    }
+
+
+    void printResultSet(ResultSet rs) throws SQLException{
+        ResultSetMetaData meta = rs.getMetaData();
+        int cols = meta.getColumnCount();
+        while(rs.next()){
+            for(int i=1; i<=cols; i++){
+                if(i>1){
+                    System.out.print(", ");
                 }
-                if (rs != null) {
-                    rs.close();
+                String value = rs.getString(i);
+                System.out.println(value + " " + meta.getColumnName(i));
+            }
+            System.out.println("");
+        }
+    }
+
+
+    void close(PreparedStatement prepSt, ResultSet rs) throws SQLException{
+        if (prepSt != null) {
+            prepSt.close();
+        }
+        if (rs != null) {
+            rs.close();
+        }
+    }
+
+
+    String[] parseConditional(String conditional){
+        int attrStartIdx = 0;
+        int attrEndIdx = 0;
+        int operaterEndIdx = 0;
+        for(int i=0; i<conditional.length(); i++){
+            char c = conditional.charAt(i);
+            if(c == '-' && i<2){
+                attrStartIdx++;
+                continue;
+            }
+            else if(c == '=') {
+                attrEndIdx = i-1;
+                operaterEndIdx = i;
+                break;
+            }
+            else if(c == '<' || c == '>' || c == '!'){
+                attrEndIdx = i-1;
+                c = conditional.charAt(i+1);
+                if(c == '='){
+                    operaterEndIdx = i+1;
+                    break;
                 }
-            } catch (SQLException ex3){
-                System.out.println(ex3.getMessage());
+                else{
+                    operaterEndIdx = i;
+                    break;
+                }
             }
         }
 
-        return false;
+        String attribute = conditional.substring(attrStartIdx, attrEndIdx+1);
+        String operator = conditional.substring(attrEndIdx+1, operaterEndIdx+1);
+        String value = conditional.substring(operaterEndIdx+1, conditional.length());
+
+        String parts[]= {attribute, operator, value};
+
+        return parts;
     }
 
 
     void displayProperty(String conditions[]){
-        String statement = "SELECT * FROM Property Where ?";
-        for(int i = 1; i < conditions.length; i++){
-            statement += " and ?";
+        if(!checkPermissions(UserType.CUSTOMER, "lproperty")){
+            return;
+        }
+
+        String statement = "SELECT * FROM Property as p JOIN Address as a ON p.locationID = a.locationID WHERE forSale = 1";
+        if(conditions != null) {
+            String operator = parseConditional(conditions[0])[1];
+            statement += " and ? " + operator + " ?";
+            for(int i = 1; i < conditions.length; i++){
+                operator = parseConditional(conditions[i])[1];
+                statement += " and ? " + operator + " ?";
+            }
         }
         statement += ";";
+
         PreparedStatement prepSt = null;
         ResultSet rs = null;
+
         try{
             prepSt = this.connection.prepareStatement(statement);
-            for(int i=0; i<conditions.length; i++){
-                prepSt.setString(i, conditions[i]);
+            if(conditions != null) {
+                for (int i = 0; i < conditions.length; i++) {
+                    String parts[] = parseConditional(conditions[i]);
+
+                    String attribute = parts[0];
+                    int attrIdx = i * 2 + 1;
+                    prepSt.setString(attrIdx, attribute);
+
+                    String value = parts[2];
+                    int valIdx = i * 2 + 2;
+                    switch (attribute) {
+                        case "price":
+                            prepSt.setInt(valIdx, Integer.parseInt(value));
+                            break;
+                        case "country":
+                            prepSt.setString(valIdx, value);
+                            break;
+                        case "squareFoot":
+                            prepSt.setInt(valIdx, Integer.parseInt(value));
+                            break;
+                        case "street":
+                            prepSt.setString(valIdx, value);
+                            break;
+                        case "zip":
+                            prepSt.setString(valIdx, value);
+                            break;
+                        case "state":
+                            prepSt.setString(valIdx, value);
+                            break;
+                    }
+                }
             }
 
             rs = prepSt.executeQuery();
@@ -90,25 +197,287 @@ public class QueryProcessor {
             if(!rs.next()){
                 System.out.println("No listings found");
             }
-            while(rs.next()){
-                //print row
+            else {
+                printResultSet(rs);
             }
 
         } catch(SQLException ex1){
-            //catch
+            System.out.println(ex1.getMessage());
         } finally{
             try {
-                if (prepSt != null) {
-                    prepSt.close();
-                }
-                if (rs != null) {
-                    rs.close();
-                }
+                close(prepSt, rs);
             } catch (SQLException ex3){
-                //squash
+                System.out.println(ex3.getMessage());
             }
 
         }
     }
 
+
+    void listProperty(String[] options){
+        if(!checkPermissions(UserType.MANAGER, "lproperty")){
+            return;
+        }
+
+        String statement = "SELECT * FROM Property";
+        if(Arrays.asList(options).contains("-s")){
+            statement += " WHERE forSale = 1";
+        }
+        statement += ";";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+
+        try{
+
+            prepSt = this.connection.prepareStatement(statement);
+            rs = prepSt.executeQuery();
+
+            if(!rs.next()){
+                System.out.println("No listings found");
+            }
+            else {
+                printResultSet(rs);
+            }
+
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally{
+            try {
+                close(prepSt, rs);
+            } catch (SQLException ex3){
+                System.out.println(ex3.getMessage());
+            }
+
+        }
+
+    }
+
+
+    void displaySale(String[] options){
+        if(!checkPermissions(UserType.MANAGER, "dsale")){
+            return;
+        }
+
+        String statement = "SELECT * FROM Sale";
+        boolean aOpt = false;
+        boolean tOpt = false;
+        if(options != null){
+            aOpt = Arrays.asList(options).contains("a");
+            tOpt = Arrays.asList(options).contains("t");
+        }
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                close(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+
+    void close(String[] options){
+        //check permissions
+        if(!checkPermissions(UserType.MANAGER, "close")){
+            return;
+        }
+
+        String statement = "";
+        //create the statment
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                close(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+
+    void registerOffer(String[] options){
+        //check permissions
+        if(!checkPermissions(UserType.AGENT, "rgsoffer")){
+            return;
+        }
+
+        String statement = "";
+        //create the statment
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                close(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+
+    void updateOffer(String[] options){
+        //check permissions
+        if(!checkPermissions(UserType.AGENT, "uoffer")){
+            return;
+        }
+
+        String statement = "";
+        //create the statment
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                close(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+
+    void removeOffer(String[] options){
+        //check permissions
+        if(!checkPermissions(UserType.AGENT, "rmvoffer")){
+            return;
+        }
+
+        String statement = "";
+        //create the statment
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                close(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+
+    void registerConnection(String[] options){
+        //check permissions
+        if(!checkPermissions(UserType.AGENT, "rgsconnection")){
+            return;
+        }
+
+        String statement = "";
+        //create the statment
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                close(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+
+    void updateConnection(String[] options){
+        //check permissions
+        if(!checkPermissions(UserType.AGENT, "uconnection")){
+            return;
+        }
+
+        String statement = "";
+        //create the statment
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                close(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+
+    void removeConnection(String[] options){
+        //check permissions
+        if(!checkPermissions(UserType.AGENT, "rmvconnection")){
+            return;
+        }
+
+        String statement = "";
+        //create the statment
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                close(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
 }
