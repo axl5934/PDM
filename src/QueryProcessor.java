@@ -6,13 +6,13 @@ public class QueryProcessor {
     private final UserType userType;
     private Connection connection;
 
-
+    //done
     QueryProcessor(Connection connection, UserType userType){
         this.connection = connection;
         this.userType = userType;
     }
 
-
+    //done
     void processQuery(String prompt) {
         String[] tokens = prompt.split(" ");
         String[] options;
@@ -54,6 +54,21 @@ public class QueryProcessor {
             case "rmvConnection":
                 removeConnection(options);
                 break;
+            case "monthSaleTotal":
+                monthSaleTotal();
+                break;
+            case "agentMostPropertySold":
+                agentMostPropertySold();
+                break;
+            case "mostExpensiveProperty":
+                mostExpensiveProperty();
+                break;
+            case "officeMostSale":
+                officeMostSale();
+                break;
+            case "agentPrimaryOffice":
+                agentPrimaryOffice();
+                break;
             default:
                 System.out.println("Error: unknown command");
                 break;
@@ -62,10 +77,12 @@ public class QueryProcessor {
     }
 
 
+    //done
     boolean checkPermissions(UserType userType, String action){
         if(this.userType != userType){
-            System.out.println("Error: " + this.userType.toString() +
-                    "cannot use " + action  + ".");
+            System.out.println("Permission denied: " +
+                    this.userType.toString() +
+                    " cannot use " + action  + ".");
             return false;
         }
 
@@ -99,6 +116,7 @@ public class QueryProcessor {
     }
 
 
+    //done
     String[] parseConditional(String conditional){
         int attrStartIdx = 0;
         int attrEndIdx = 0;
@@ -138,15 +156,16 @@ public class QueryProcessor {
     }
 
 
+    //check types
     void displayProperty(String conditions[]){
-        if(!checkPermissions(UserType.CUSTOMER, "lproperty")){
+        if(!checkPermissions(UserType.CUSTOMER, "dproperty")){
             return;
         }
 
-        String statement = "SELECT * FROM Property as p JOIN Address as a ON p.locationID = a.locationID WHERE forSale = 1";
+        String statement = "SELECT * FROM Property_ForSale";
         if(conditions != null) {
             String operator = parseConditional(conditions[0])[1];
-            statement += " and ? " + operator + " ?";
+            statement += " WHERE ? " + operator + " ?";
             for(int i = 1; i < conditions.length; i++){
                 operator = parseConditional(conditions[i])[1];
                 statement += " and ? " + operator + " ?";
@@ -171,7 +190,7 @@ public class QueryProcessor {
                     int valIdx = i * 2 + 2;
                     switch (attribute) {
                         case "price":
-                            prepSt.setInt(valIdx, Integer.parseInt(value));
+                            prepSt.setString(valIdx, value);
                             break;
                         case "country":
                             prepSt.setString(valIdx, value);
@@ -191,7 +210,6 @@ public class QueryProcessor {
                     }
                 }
             }
-
             rs = prepSt.executeQuery();
 
             if(!rs.next()){
@@ -214,14 +232,19 @@ public class QueryProcessor {
     }
 
 
+    //working on
     void listProperty(String[] options){
         if(!checkPermissions(UserType.MANAGER, "lproperty")){
             return;
         }
 
-        String statement = "SELECT * FROM Property";
-        if(Arrays.asList(options).contains("-s")){
-            statement += " WHERE forSale = 1";
+        String statement = "SELECT * FROM price_Address";
+        if(Arrays.asList(options).contains("s")){
+            statement += " WHERE forSale = true";
+        }
+
+        if(Arrays.asList(options).contains("d")){
+            statement = "SELECT * Property_Address";
         }
         statement += ";";
 
@@ -480,4 +503,20 @@ public class QueryProcessor {
             }
         }
     }
+
+
+    void monthSaleTotal(){}
+
+
+    void agentMostPropertySold(){}
+
+
+    void mostExpensiveProperty(){}
+
+
+    void officeMostSale(){}
+
+
+    void agentPrimaryOffice(){}
+
 }
