@@ -45,15 +45,6 @@ public class QueryProcessor {
             case "rmvoffer":
                 removeOffer(options);
                 break;
-            case "rgsconnection":
-                registerConnection(options);
-                break;
-            case "uconnection":
-                updateConnection(options);
-                break;
-            case "rmvConnection":
-                removeConnection(options);
-                break;
             case "monthSaleTotal":
                 monthSaleTotal();
                 break;
@@ -106,7 +97,7 @@ public class QueryProcessor {
     }
 
 
-    void close(PreparedStatement prepSt, ResultSet rs) throws SQLException{
+    void closeSQL(PreparedStatement prepSt, ResultSet rs) throws SQLException{
         if (prepSt != null) {
             prepSt.close();
         }
@@ -156,7 +147,7 @@ public class QueryProcessor {
     }
 
 
-    //check types
+    //check types and print results correctly
     void displayProperty(String conditions[]){
         if(!checkPermissions(UserType.CUSTOMER, "dproperty")){
             return;
@@ -223,7 +214,7 @@ public class QueryProcessor {
             System.out.println(ex1.getMessage());
         } finally{
             try {
-                close(prepSt, rs);
+                closeSQL(prepSt, rs);
             } catch (SQLException ex3){
                 System.out.println(ex3.getMessage());
             }
@@ -234,17 +225,31 @@ public class QueryProcessor {
 
     //working on
     void listProperty(String[] options){
-        if(!checkPermissions(UserType.MANAGER, "lproperty")){
+        if(!checkPermissions(UserType.MANAGER, "lproperty")) {
             return;
         }
 
         String statement = "SELECT * FROM price_Address";
-        if(Arrays.asList(options).contains("s")){
-            statement += " WHERE forSale = true";
-        }
+        int numOptions = options.length;
+        if(options != null) {
+            if (Arrays.asList(options).contains("d")) {
+                statement = "SELECT * Property_Address";
+                numOptions--;
+            }
 
-        if(Arrays.asList(options).contains("d")){
-            statement = "SELECT * Property_Address";
+            if(numOptions > 0) {
+                statement += " WHERE";
+                for (int i = 0; i < numOptions; i++) {
+                    String option = options[i];
+                    if (option.equals("s")) {
+                        statement += " forSale = true";
+                    }
+                    else{
+                        String operator = parseConditional(options[i])[1];
+                        statement += " ? " + operator + " ?";
+                    }
+                }
+            }
         }
         statement += ";";
 
@@ -252,8 +257,10 @@ public class QueryProcessor {
         ResultSet rs = null;
 
         try{
-
             prepSt = this.connection.prepareStatement(statement);
+            for(int i=0; i<numOptions; i++){
+                String[] parts = parseConditional(options[i]);
+            }
             rs = prepSt.executeQuery();
 
             if(!rs.next()){
@@ -267,7 +274,7 @@ public class QueryProcessor {
             System.out.println(ex1.getMessage());
         } finally{
             try {
-                close(prepSt, rs);
+                closeSQL(prepSt, rs);
             } catch (SQLException ex3){
                 System.out.println(ex3.getMessage());
             }
@@ -301,7 +308,7 @@ public class QueryProcessor {
             System.out.println(ex1.getMessage());
         } finally {
             try {
-                close(prepSt, rs);
+                closeSQL(prepSt, rs);
             } catch (SQLException ex2){
                 System.out.println(ex2.getMessage());
             }
@@ -329,7 +336,7 @@ public class QueryProcessor {
             System.out.println(ex1.getMessage());
         } finally {
             try {
-                close(prepSt, rs);
+                closeSQL(prepSt, rs);
             } catch (SQLException ex2){
                 System.out.println(ex2.getMessage());
             }
@@ -357,7 +364,7 @@ public class QueryProcessor {
             System.out.println(ex1.getMessage());
         } finally {
             try {
-                close(prepSt, rs);
+                closeSQL(prepSt, rs);
             } catch (SQLException ex2){
                 System.out.println(ex2.getMessage());
             }
@@ -385,7 +392,7 @@ public class QueryProcessor {
             System.out.println(ex1.getMessage());
         } finally {
             try {
-                close(prepSt, rs);
+                closeSQL(prepSt, rs);
             } catch (SQLException ex2){
                 System.out.println(ex2.getMessage());
             }
@@ -413,91 +420,7 @@ public class QueryProcessor {
             System.out.println(ex1.getMessage());
         } finally {
             try {
-                close(prepSt, rs);
-            } catch (SQLException ex2){
-                System.out.println(ex2.getMessage());
-            }
-        }
-    }
-
-
-    void registerConnection(String[] options){
-        //check permissions
-        if(!checkPermissions(UserType.AGENT, "rgsconnection")){
-            return;
-        }
-
-        String statement = "";
-        //create the statment
-
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
-        try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            //do something with rs
-        } catch(SQLException ex1){
-            System.out.println(ex1.getMessage());
-        } finally {
-            try {
-                close(prepSt, rs);
-            } catch (SQLException ex2){
-                System.out.println(ex2.getMessage());
-            }
-        }
-    }
-
-
-    void updateConnection(String[] options){
-        //check permissions
-        if(!checkPermissions(UserType.AGENT, "uconnection")){
-            return;
-        }
-
-        String statement = "";
-        //create the statment
-
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
-        try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            //do something with rs
-        } catch(SQLException ex1){
-            System.out.println(ex1.getMessage());
-        } finally {
-            try {
-                close(prepSt, rs);
-            } catch (SQLException ex2){
-                System.out.println(ex2.getMessage());
-            }
-        }
-    }
-
-
-    void removeConnection(String[] options){
-        //check permissions
-        if(!checkPermissions(UserType.AGENT, "rmvconnection")){
-            return;
-        }
-
-        String statement = "";
-        //create the statment
-
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
-        try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            //do something with rs
-        } catch(SQLException ex1){
-            System.out.println(ex1.getMessage());
-        } finally {
-            try {
-                close(prepSt, rs);
+                closeSQL(prepSt, rs);
             } catch (SQLException ex2){
                 System.out.println(ex2.getMessage());
             }
