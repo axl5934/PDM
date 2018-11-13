@@ -122,7 +122,7 @@ public class QueryProcessor {
     }
 
 
-    //done
+    //done, needs testing
     String[] parseConditional(String conditional){
         int attrStartIdx = 0;
         int attrEndIdx = 0;
@@ -162,7 +162,7 @@ public class QueryProcessor {
     }
 
 
-    //need to print result
+    //done, needs testing
     void displayProperty(String conditions[]){
         if(!checkPermissions(UserType.CUSTOMER, "dproperty")){
             return;
@@ -242,7 +242,7 @@ public class QueryProcessor {
     }
 
 
-    //working on
+    //done, needs testing
     void listProperty(String[] options){
         if(!checkPermissions(UserType.MANAGER, "lproperty")) {
             return;
@@ -250,29 +250,39 @@ public class QueryProcessor {
 
         String statement = "SELECT * FROM price_Address";
         int numOptions = options.length;
+        boolean dOpt = false;
+        boolean sOpt = false;
         if(options != null) {
             if (Arrays.asList(options).contains("-d")) {
-                statement = "SELECT * Property_Address";
+                dOpt = true;
                 numOptions--;
             }
 
             if(Arrays.asList(options).contains("-s")){
-                statement = "";
+                sOpt = true;
+                numOptions--;
+            }
+
+            if(dOpt && sOpt){
+                statement = "SELECT * FROM for_sale_property_address";
+            }
+            else if(dOpt){
+                statement = "SELECT * FROM Property_Address";
+            }
+            else if(sOpt){
+                statement = "SELECT * FROM for_sale_price_address";
             }
 
             if(numOptions > 0) {
                 statement += " WHERE";
-                for (int i = 0; i < numOptions; i++) {
-                    String option = options[i];
-                    if (option.equals("-s")) {
-                        statement += " forSale = true";
+                for (int i = 0; i < options.length; i++) {
+                    if(options.equals("-d") || options.equals("-s")){
+                        continue;
                     }
-                    else{
-                        String[] parts = parseConditional(options[i]);
-                        String attribute = parts[0];
-                        String operator = parts[1];
-                        statement += " " + attribute + " " + operator + " ?";
-                    }
+                    String[] parts = parseConditional(options[i]);
+                    String attribute = parts[0];
+                    String operator = parts[1];
+                    statement += " " + attribute + " " + operator + " ?";
                 }
             }
         }
