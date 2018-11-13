@@ -431,7 +431,9 @@ public class QueryProcessor {
     }
 
 
-    void monthSaleTotal(){}
+    void monthSaleTotal(){
+        pass;
+    }
 
 
     void agentMostPropertySold(){}
