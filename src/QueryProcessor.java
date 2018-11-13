@@ -153,7 +153,7 @@ public class QueryProcessor {
             return;
         }
 
-        String statement = "SELECT * FROM Property_ForSale";
+        String statement = "SELECT * FROM property_for_sale";
         if(conditions != null) {
             String[] parts = parseConditional(conditions[0]);
             String attribute = parts[0];
@@ -236,9 +236,13 @@ public class QueryProcessor {
         String statement = "SELECT * FROM price_Address";
         int numOptions = options.length;
         if(options != null) {
-            if (Arrays.asList(options).contains("d")) {
+            if (Arrays.asList(options).contains("-d")) {
                 statement = "SELECT * Property_Address";
                 numOptions--;
+            }
+
+            if(Arrays.asList(options).contains("-s")){
+                statement = "";
             }
 
             if(numOptions > 0) {
