@@ -147,7 +147,7 @@ public class QueryProcessor {
     }
 
 
-    //check types and print results correctly
+    //need to print result
     void displayProperty(String conditions[]){
         if(!checkPermissions(UserType.CUSTOMER, "dproperty")){
             return;
@@ -155,11 +155,15 @@ public class QueryProcessor {
 
         String statement = "SELECT * FROM Property_ForSale";
         if(conditions != null) {
-            String operator = parseConditional(conditions[0])[1];
-            statement += " WHERE ? " + operator + " ?";
+            String[] parts = parseConditional(conditions[0]);
+            String attribute = parts[0];
+            String operator = parts[1];
+            statement += " WHERE " + attribute + " " + operator + " ?";
             for(int i = 1; i < conditions.length; i++){
-                operator = parseConditional(conditions[i])[1];
-                statement += " and ? " + operator + " ?";
+                parts = parseConditional(conditions[i]);
+                attribute = parts[0];
+                operator = parts[1];
+                statement += " and " + attribute + " " + operator + " ?";
             }
         }
         statement += ";";
@@ -174,29 +178,27 @@ public class QueryProcessor {
                     String parts[] = parseConditional(conditions[i]);
 
                     String attribute = parts[0];
-                    int attrIdx = i * 2 + 1;
-                    prepSt.setString(attrIdx, attribute);
 
                     String value = parts[2];
-                    int valIdx = i * 2 + 2;
+                    int valueIdx = i+1;
                     switch (attribute) {
                         case "price":
-                            prepSt.setString(valIdx, value);
+                            prepSt.setString(valueIdx, value);
                             break;
                         case "country":
-                            prepSt.setString(valIdx, value);
+                            prepSt.setString(valueIdx, value);
                             break;
                         case "squareFoot":
-                            prepSt.setInt(valIdx, Integer.parseInt(value));
+                            prepSt.setInt(valueIdx, Integer.parseInt(value));
                             break;
                         case "street":
-                            prepSt.setString(valIdx, value);
+                            prepSt.setString(valueIdx, value);
                             break;
                         case "zip":
-                            prepSt.setString(valIdx, value);
+                            prepSt.setString(valueIdx, value);
                             break;
                         case "state":
-                            prepSt.setString(valIdx, value);
+                            prepSt.setString(valueIdx, value);
                             break;
                     }
                 }
@@ -284,6 +286,7 @@ public class QueryProcessor {
     }
 
 
+    //working on
     void displaySale(String[] options){
         if(!checkPermissions(UserType.MANAGER, "dsale")){
             return;
