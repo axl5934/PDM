@@ -247,8 +247,10 @@ public class QueryProcessor {
                         statement += " forSale = true";
                     }
                     else{
-                        String operator = parseConditional(options[i])[1];
-                        statement += " ? " + operator + " ?";
+                        String[] parts = parseConditional(options[i]);
+                        String attribute = parts[0];
+                        String operator = parts[1];
+                        statement += " " + attribute + " " + operator + " ?";
                     }
                 }
             }
@@ -262,6 +264,8 @@ public class QueryProcessor {
             prepSt = this.connection.prepareStatement(statement);
             for(int i=0; i<numOptions; i++){
                 String[] parts = parseConditional(options[i]);
+                String attribute = parts[0];
+                String value = parts[1];
             }
             rs = prepSt.executeQuery();
 
