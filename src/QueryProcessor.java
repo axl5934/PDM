@@ -471,19 +471,132 @@ public class QueryProcessor {
 
 
     void monthSaleTotal(){
-        pass;
+        if(!checkPermissions(UserType.MANAGER, "monthSaleTotal")) {
+            return;
+        }
+
+        String statement = "SELECT * FROM office_monthly_sale;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
     }
 
 
-    void agentMostPropertySold(){}
+    void agentMostPropertySold(){
+        if(!checkPermissions(UserType.MANAGER, "agentMostPropertySold")) {
+            return;
+        }
+
+        String statement = "SELECT * FROM agent_sold_most_property;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
 
 
-    void mostExpensiveProperty(){}
+    void mostExpensiveProperty(){
+        if(!checkPermissions(UserType.MANAGER, "mostExpensiveProperty")) {
+            return;
+        }
+
+        String statement = "SELECT * FROM most_expensive_property;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
 
 
-    void officeMostSale(){}
+    void officeMostSale(){
+        if(!checkPermissions(UserType.MANAGER, "officeMostSale")) {
+            return;
+        }
+
+        String statement = "SELECT * FROM office_with_most_sale;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
 
 
-    void agentPrimaryOffice(){}
+    void agentPrimaryOffice(){
+        if(!checkPermissions(UserType.MANAGER, "agentPrimaryOffice")) {
+            return;
+        }
+
+        String statement = "SELECT * FROM agent_primary_office;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            //fill in ? if needed
+            rs = prepSt.executeQuery();
+            //do something with rs
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
 
 }
