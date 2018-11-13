@@ -198,7 +198,7 @@ public class QueryProcessor {
                     int valueIdx = i+1;
                     switch (attribute) {
                         case "price":
-                            prepSt.setDouble(valueIdx, Double.parseDouble(value));
+                            prepSt.setObject(valueIdx, value, JDBCType.OTHER);
                             break;
                         case "country":
                             prepSt.setString(valueIdx, value);
@@ -365,7 +365,15 @@ public class QueryProcessor {
                 tOpt = true;
                 numOptions--;
             }
+
+            if(numOptions > 0){
+                statement += " WHERE";
+                for(int i=0; i<options.length; i++){
+
+                }
+            }
         }
+        statement += ";";
 
 
         PreparedStatement prepSt = null;
