@@ -183,7 +183,7 @@ public class QueryProcessor {
                     int valueIdx = i+1;
                     switch (attribute) {
                         case "price":
-                            prepSt.setString(valueIdx, value);
+                            prepSt.setDouble(valueIdx, Double.parseDouble(value));
                             break;
                         case "country":
                             prepSt.setString(valueIdx, value);
@@ -200,6 +200,8 @@ public class QueryProcessor {
                         case "state":
                             prepSt.setString(valueIdx, value);
                             break;
+                        default:
+                            throw new SQLException("Error: unknown attribute given");
                     }
                 }
             }
@@ -243,7 +245,7 @@ public class QueryProcessor {
                 statement += " WHERE";
                 for (int i = 0; i < numOptions; i++) {
                     String option = options[i];
-                    if (option.equals("s")) {
+                    if (option.equals("-s")) {
                         statement += " forSale = true";
                     }
                     else{
@@ -262,10 +264,34 @@ public class QueryProcessor {
 
         try{
             prepSt = this.connection.prepareStatement(statement);
-            for(int i=0; i<numOptions; i++){
+            int valueIdx = 1;
+            for(int i=0; i<options.length; i++){
+                if(options[i].equals("-s") || options[i].equals("-d")){
+                    continue;
+                }
+
                 String[] parts = parseConditional(options[i]);
                 String attribute = parts[0];
                 String value = parts[1];
+
+                switch(attribute){
+                    case "country":
+                        prepSt.setString(valueIdx, value);
+                        break;
+                    case "state":
+                        prepSt.setString(valueIdx, value);
+                        break;
+                    case "street":
+                        prepSt.setString(valueIdx, value);
+                        break;
+                    case "zip":
+                        prepSt.setString(valueIdx, value);
+                        break;
+                    default:
+                        throw new SQLException("Error: unknown attribute given");
+                }
+
+                valueIdx++;
             }
             rs = prepSt.executeQuery();
 
@@ -297,12 +323,21 @@ public class QueryProcessor {
         }
 
         String statement = "SELECT * FROM Sale";
+        int numOptions = options.length;
         boolean aOpt = false;
         boolean tOpt = false;
         if(options != null){
-            aOpt = Arrays.asList(options).contains("a");
-            tOpt = Arrays.asList(options).contains("t");
+            if(Arrays.asList(options).contains("a")) {
+                aOpt = true;
+                numOptions--;
+            }
+
+            if(Arrays.asList(options).contains("t")){
+                tOpt = true;
+                numOptions--;
+            }
         }
+
 
         PreparedStatement prepSt = null;
         ResultSet rs = null;
@@ -436,132 +471,19 @@ public class QueryProcessor {
 
 
     void monthSaleTotal(){
-        if(!checkPermissions(UserType.MANAGER, "monthSaleTotal")) {
-            return;
-        }
-
-        String statement = "SELECT * FROM office_monthly_sale;";
-
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
-        try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            //do something with rs
-        } catch(SQLException ex1){
-            System.out.println(ex1.getMessage());
-        } finally {
-            try {
-                closeSQL(prepSt, rs);
-            } catch (SQLException ex2){
-                System.out.println(ex2.getMessage());
-            }
-        }
+        pass;
     }
 
 
-    void agentMostPropertySold(){
-        if(!checkPermissions(UserType.MANAGER, "agentMostPropertySold")) {
-            return;
-        }
-
-        String statement = "SELECT * FROM agent_sold_most_property;";
-
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
-        try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            //do something with rs
-        } catch(SQLException ex1){
-            System.out.println(ex1.getMessage());
-        } finally {
-            try {
-                closeSQL(prepSt, rs);
-            } catch (SQLException ex2){
-                System.out.println(ex2.getMessage());
-            }
-        }
-    }
+    void agentMostPropertySold(){}
 
 
-    void mostExpensiveProperty(){
-        if(!checkPermissions(UserType.MANAGER, "mostExpensiveProperty")) {
-            return;
-        }
-
-        String statement = "SELECT * FROM most_expensive_property;";
-
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
-        try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            //do something with rs
-        } catch(SQLException ex1){
-            System.out.println(ex1.getMessage());
-        } finally {
-            try {
-                closeSQL(prepSt, rs);
-            } catch (SQLException ex2){
-                System.out.println(ex2.getMessage());
-            }
-        }
-    }
+    void mostExpensiveProperty(){}
 
 
-    void officeMostSale(){
-        if(!checkPermissions(UserType.MANAGER, "officeMostSale")) {
-            return;
-        }
-
-        String statement = "SELECT * FROM office_with_most_sale;";
-
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
-        try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            //do something with rs
-        } catch(SQLException ex1){
-            System.out.println(ex1.getMessage());
-        } finally {
-            try {
-                closeSQL(prepSt, rs);
-            } catch (SQLException ex2){
-                System.out.println(ex2.getMessage());
-            }
-        }
-    }
+    void officeMostSale(){}
 
 
-    void agentPrimaryOffice(){
-        if(!checkPermissions(UserType.MANAGER, "agentPrimaryOffice")) {
-            return;
-        }
-
-        String statement = "SELECT * FROM agent_primary_office;";
-
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
-        try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            //do something with rs
-        } catch(SQLException ex1){
-            System.out.println(ex1.getMessage());
-        } finally {
-            try {
-                closeSQL(prepSt, rs);
-            } catch (SQLException ex2){
-                System.out.println(ex2.getMessage());
-            }
-        }
-    }
+    void agentPrimaryOffice(){}
 
 }
