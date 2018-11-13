@@ -486,7 +486,7 @@ public class QueryProcessor {
             prepSt = this.connection.prepareStatement(statement);
             //fill in ? if needed
             rs = prepSt.executeQuery();
-            //do something with rs
+            printResultSet(rs);
         } catch(SQLException ex1){
             System.out.println(ex1.getMessage());
         } finally {
@@ -512,7 +512,7 @@ public class QueryProcessor {
             prepSt = this.connection.prepareStatement(statement);
             //fill in ? if needed
             rs = prepSt.executeQuery();
-            //do something with rs
+            printResultSet(rs);
         } catch(SQLException ex1){
             System.out.println(ex1.getMessage());
         } finally {
@@ -538,7 +538,7 @@ public class QueryProcessor {
             prepSt = this.connection.prepareStatement(statement);
             //fill in ? if needed
             rs = prepSt.executeQuery();
-            //do something with rs
+            printResultSet(rs);
         } catch(SQLException ex1){
             System.out.println(ex1.getMessage());
         } finally {
@@ -564,7 +564,7 @@ public class QueryProcessor {
             prepSt = this.connection.prepareStatement(statement);
             //fill in ? if needed
             rs = prepSt.executeQuery();
-            //do something with rs
+            printResultSet(rs);
         } catch(SQLException ex1){
             System.out.println(ex1.getMessage());
         } finally {
@@ -590,7 +590,7 @@ public class QueryProcessor {
             prepSt = this.connection.prepareStatement(statement);
             //fill in ? if needed
             rs = prepSt.executeQuery();
-            //do something with rs
+            printResultSet(rs);
         } catch(SQLException ex1){
             System.out.println(ex1.getMessage());
         } finally {
@@ -616,7 +616,7 @@ public class QueryProcessor {
             prepSt = this.connection.prepareStatement(statement);
             //fill in ? if needed
             rs = prepSt.executeQuery();
-            //do something with rs
+            printResultSet(rs);
         } catch(SQLException ex1){
             System.out.println(ex1.getMessage());
         } finally {
