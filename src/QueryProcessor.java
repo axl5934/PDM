@@ -89,8 +89,23 @@ public class QueryProcessor {
                 if(i>1){
                     System.out.print(", ");
                 }
-                String value = rs.getString(i);
-                System.out.println(value + " " + meta.getColumnName(i));
+                int type = meta.getColumnType(i);
+                if (type == Types.VARCHAR || type == Types.CHAR) {
+                    String value = rs.getString(i);
+                    System.out.println(value + " " + meta.getColumnName(i));
+                } else if(type == Types.INTEGER) {
+                    Integer value = rs.getInt(i);
+                    System.out.println(value + " " + meta.getColumnName(i));
+                } else if(type == Types.BOOLEAN) {
+                    Boolean value = rs.getBoolean(i);
+                    System.out.println(value + " " + meta.getColumnName(i));
+                } else if(type == Types.FLOAT) {
+                    Float value = rs.getFloat(i);
+                    System.out.println(value + " " + meta.getColumnName(i));
+                } else {
+                    Long value = rs.getLong(i);
+                    System.out.println(value + " " + meta.getColumnName(i));
+                }
             }
             System.out.println("");
         }
