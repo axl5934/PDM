@@ -1,3 +1,4 @@
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.Arrays;
 
@@ -118,6 +119,13 @@ public class QueryProcessor {
         }
         if (rs != null) {
             rs.close();
+        }
+    }
+
+
+    void closeCall(CallableStatement callSt) throws SQLException {
+        if(callSt != null){
+            callSt.close();
         }
     }
 
@@ -275,13 +283,20 @@ public class QueryProcessor {
 
             if(numOptions > 0) {
                 statement += " WHERE";
-                for (int i = 0; i < options.length; i++) {
-                    if(options.equals("-d") || options.equals("-s")){
+                boolean first = true;
+                for(int i = 0; i < options.length; i++) {
+                    if(options[i].equals("-d") || options[i].equals("-s")){
                         continue;
                     }
                     String[] parts = parseConditional(options[i]);
                     String attribute = parts[0];
                     String operator = parts[1];
+                    if(first) {
+                        first = false;
+                    }
+                    else{
+                        statement += " AND";
+                    }
                     statement += " " + attribute + " " + operator + " ?";
                 }
             }
@@ -345,7 +360,7 @@ public class QueryProcessor {
     }
 
 
-    //working on
+    //done, needs testing
     void displaySale(String[] options){
         if(!checkPermissions(UserType.MANAGER, "dsale")){
             return;
@@ -353,36 +368,108 @@ public class QueryProcessor {
 
         String statement = "SELECT * FROM Sale";
         int numOptions = options.length;
+
         boolean aOpt = false;
         boolean tOpt = false;
         if(options != null){
-            if(Arrays.asList(options).contains("a")) {
+            if(Arrays.asList(options).contains("-a")) {
                 aOpt = true;
                 numOptions--;
             }
 
-            if(Arrays.asList(options).contains("t")){
+            if(Arrays.asList(options).contains("-t")){
                 tOpt = true;
                 numOptions--;
             }
 
             if(numOptions > 0){
                 statement += " WHERE";
+                String option;
+                String[] parts;
+                String attribute;
+                String operator;
+                boolean first = true;
                 for(int i=0; i<options.length; i++){
-
+                    option = options[i];
+                    if(option.equals("-a") || option.equals("-t")){
+                        continue;
+                    }
+                    else{
+                        parts = parseConditional(options[i]);
+                        attribute = parts[0];
+                        operator = parts[1];
+                        if(first){
+                            first = false;
+                        }
+                        else {
+                            statement += " AND";
+                        }
+                        statement += " " + attribute + " " + operator + "?";
+                    }
                 }
             }
         }
         statement += ";";
 
-
         PreparedStatement prepSt = null;
         ResultSet rs = null;
         try{
             prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
+
+            String option;
+            String[] parts;
+            String attribute;
+            String value;
+            int valueIdx = 1;
+            for(int i=0; i<options.length; i++){
+                option = options[i];
+                if(option.equals("-a") || option.equals("-t")){
+                    continue;
+                }
+
+                parts = parseConditional(option);
+                attribute = parts[0];
+                value = parts[2];
+
+                switch(attribute){
+                    case "country":
+                        prepSt.setString(valueIdx, value);
+                        break;
+                    case "state":
+                        prepSt.setString(valueIdx, value);
+                        break;
+                    case "street":
+                        prepSt.setString(valueIdx, value);
+                        break;
+                    case "zip":
+                        prepSt.setString(valueIdx, value);
+                        break;
+                    default:
+                        throw new SQLException("Error: unknown attribute given");
+                }
+            }
             rs = prepSt.executeQuery();
-            //do something with rs
+
+            if(aOpt || tOpt){
+                int rows = 0;
+                BigDecimal total = BigDecimal.ZERO;
+                while(rs.next()){
+                    total = total.add(rs.getBigDecimal("price"));
+                    rows++;
+                }
+                rs.beforeFirst();
+
+                if(aOpt){
+                    BigDecimal averageSale = total.divide(BigDecimal.valueOf(rows));
+                    System.out.printf("Average sale of filtered " +
+                            "property: %.2f\n", averageSale);
+                }
+
+                if(tOpt){
+                    System.out.printf("Total sales of filtered " +
+                            "sales: %.2f\n", total);
+                }
+            }
         } catch(SQLException ex1){
             System.out.println(ex1.getMessage());
         } finally {
@@ -395,27 +482,37 @@ public class QueryProcessor {
     }
 
 
+    //done, needs testing
     void close(String[] options){
         //check permissions
         if(!checkPermissions(UserType.MANAGER, "close")){
             return;
         }
 
-        String statement = "";
-        //create the statment
+        String statement = "{CALL close(?)}";
 
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
+        CallableStatement callSt = null;
         try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            //do something with rs
+            this.connection.setAutoCommit(false);
+
+            callSt = this.connection.prepareCall(statement);
+            int offerID = Integer.parseInt(parseConditional(options[0])[2]);
+            callSt.setInt(1, offerID);
+            callSt.execute();
+
+            this.connection.commit();
+
+            System.out.println("Close successful.");
         } catch(SQLException ex1){
             System.out.println(ex1.getMessage());
+            try {
+                this.connection.rollback();
+            } catch(SQLException exRoll){
+                System.out.println(exRoll.getMessage());
+            }
         } finally {
             try {
-                closeSQL(prepSt, rs);
+                closeCall(callSt);
             } catch (SQLException ex2){
                 System.out.println(ex2.getMessage());
             }
@@ -423,27 +520,45 @@ public class QueryProcessor {
     }
 
 
+    //done, needs testing
     void registerOffer(String[] options){
         //check permissions
         if(!checkPermissions(UserType.AGENT, "rgsoffer")){
             return;
         }
 
-        String statement = "";
-        //create the statment
+        String statement = "{CALL rgsoffer(?, ?, ?, ?, ?)}";
 
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
+        CallableStatement callSt = null;
         try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            //do something with rs
+            this.connection.setAutoCommit(false);
+            callSt = this.connection.prepareCall(statement);
+
+            int buyerID = Integer.parseInt(parseConditional(options[0])[2]);
+            callSt.setInt(1, buyerID);
+
+            int sellerID = Integer.parseInt(parseConditional(options[1])[2]);
+            callSt.setInt(2, sellerID);
+
+            int propertyID = Integer.parseInt(parseConditional(options[2])[2]);
+            callSt.setInt(3, propertyID);
+
+            int agentID = Integer.parseInt(parseConditional(options[3])[2]);
+            callSt.setInt(4, agentID);
+
+            float priceOffer = Float.parseFloat(parseConditional(options[4])[2]);
+            callSt.setFloat(5, priceOffer);
+
+            callSt.execute();
+
+            this.connection.commit();
+
+            System.out.println("Successfully registered offer.");
         } catch(SQLException ex1){
             System.out.println(ex1.getMessage());
         } finally {
             try {
-                closeSQL(prepSt, rs);
+                closeCall(callSt);
             } catch (SQLException ex2){
                 System.out.println(ex2.getMessage());
             }
@@ -451,27 +566,35 @@ public class QueryProcessor {
     }
 
 
+    //done, needs testing
     void updateOffer(String[] options){
         //check permissions
         if(!checkPermissions(UserType.AGENT, "uoffer")){
             return;
         }
 
-        String statement = "";
-        //create the statment
+        String statement = "{CALL uoffer(?, ?))";
 
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
+        CallableStatement callSt = null;
+
         try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            //do something with rs
+            this.connection.setAutoCommit(false);
+
+            callSt = this.connection.prepareCall(statement);
+
+            int offerID = Integer.parseInt(parseConditional(options[0])[2]);
+            float priceOffer = Float.parseFloat(parseConditional(options[1])[2]);
+            callSt.setInt(1, offerID);
+            callSt.setFloat(2, priceOffer);
+            callSt.execute();
+
+            this.connection.commit();
+            System.out.println("Update successful.");
         } catch(SQLException ex1){
             System.out.println(ex1.getMessage());
         } finally {
             try {
-                closeSQL(prepSt, rs);
+                closeCall(callSt);
             } catch (SQLException ex2){
                 System.out.println(ex2.getMessage());
             }
@@ -479,27 +602,31 @@ public class QueryProcessor {
     }
 
 
+    //done, needs testing
     void removeOffer(String[] options){
         //check permissions
         if(!checkPermissions(UserType.AGENT, "rmvoffer")){
             return;
         }
 
-        String statement = "";
-        //create the statment
+        String statement = "{CALL rmvoffer(?)}";
 
-        PreparedStatement prepSt = null;
-        ResultSet rs = null;
+        CallableStatement callSt = null;
         try{
-            prepSt = this.connection.prepareStatement(statement);
-            //fill in ? if needed
-            rs = prepSt.executeQuery();
-            printResultSet(rs);
+            this.connection.setAutoCommit(false);
+
+            callSt = this.connection.prepareCall(statement);
+            int offerID = Integer.parseInt(parseConditional(options[0])[2]);
+            callSt.setInt(1, offerID);
+            callSt.execute();
+
+            this.connection.commit();
+            System.out.println("Successfully removed offer.");
         } catch(SQLException ex1){
             System.out.println(ex1.getMessage());
         } finally {
             try {
-                closeSQL(prepSt, rs);
+                closeCall(callSt);
             } catch (SQLException ex2){
                 System.out.println(ex2.getMessage());
             }
