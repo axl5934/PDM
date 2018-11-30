@@ -206,7 +206,7 @@ public class QueryProcessor {
                     int valueIdx = i+1;
                     switch (attribute) {
                         case "price":
-                            prepSt.setObject(valueIdx, value, JDBCType.OTHER);
+                            prepSt.setObject(valueIdx, value, Types.OTHER);
                             break;
                         case "country":
                             prepSt.setString(valueIdx, value);
