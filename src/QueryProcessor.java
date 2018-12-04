@@ -67,6 +67,18 @@ public class QueryProcessor {
             case "uoffice":
                 updateOffice(options);
                 break;
+            case "rmvoffice":
+                removeOffice(options);
+                break;
+            case "rgsaddress":
+                registerAddress(options);
+                break;
+            case "rmvaddress":
+                removeAddress(options);
+                break;
+            case "rgsproperty":
+                registerProperty(options);
+                break;
             default:
                 System.out.println("Error: unknown command");
                 break;
@@ -831,6 +843,11 @@ public class QueryProcessor {
             return;
         }
 
+        if(options == null){
+            System.out.println("Error: not enough parameters");
+            return;
+        }
+
         String statement = "UPDATE office SET ";
 
         String[] parts1 = parseConditional(options[0]);
@@ -873,6 +890,228 @@ public class QueryProcessor {
                 }
             }
             prepSt.setInt(j, Integer.parseInt(value));
+            rs = prepSt.executeQuery();
+            printResultSet(rs);
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+    void removeOffice(String[] options){
+        if(!checkPermissions(UserType.MANAGER, "rmvoffice")) {
+            return;
+        }
+
+        if(options == null){
+            System.out.println("Error: not enough parameters");
+            return;
+        }
+
+        String statement = "DELETE FROM office WHERE ";
+
+        String[] parts = parseConditional(options[0]);
+        String attribute = parts[0];
+        String operator = parts[1];
+        String value = parts[2];
+
+        statement += attribute + operator + "?;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            prepSt.setInt(1, Integer.parseInt(value));
+            rs = prepSt.executeQuery();
+            printResultSet(rs);
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+    void registerAddress(String[] options){
+        if(!checkPermissions(UserType.MANAGER, "rgsaddress")) {
+            return;
+        }
+
+        if(options == null){
+            System.out.println("Error: not enough parameters");
+            return;
+        }
+
+        String statement = "INSERT INTO address (";
+
+        String[] parts;
+
+        for(int i = 0; i < options.length; i++) {
+
+            if(i > 0){
+                statement += ", ";
+            }
+            parts = parseConditional(options[i]);
+            statement += parts[0];
+        }
+
+        statement += ") VALUES (";
+
+        for(int i = 0; i < options.length; i++) {
+
+            if(i > 0){
+                statement += ",";
+            }
+            statement += "?";
+        }
+
+        statement += ");";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            int j;
+            for(j = 1; j <= options.length; j++) {
+                parts = parseConditional(options[j-1]);
+                switch (parts[0]) {
+                    case "street":
+                        prepSt.setString(j, parts[2]);
+                        break;
+                    case "zip":
+                        prepSt.setString(j, parts[2]);
+                        break;
+                    case "state":
+                        prepSt.setString(j, parts[2]);
+                        break;
+                    case "aptNum":
+                        prepSt.setInt(j, Integer.parseInt(parts[2]));
+                        break;
+                    case "number":
+                        prepSt.setInt(j, Integer.parseInt(parts[2]));
+                        break;
+                    default:
+                        throw new SQLException("Error: unknown attribute given");
+                }
+            }
+            rs = prepSt.executeQuery();
+            printResultSet(rs);
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+    void removeAddress(String[] options){
+        if(!checkPermissions(UserType.MANAGER, "rmvaddress")) {
+            return;
+        }
+
+        if(options == null){
+            System.out.println("Error: not enough parameters");
+            return;
+        }
+
+        String statement = "DELETE FROM address WHERE ";
+
+        String[] parts = parseConditional(options[0]);
+        String attribute = parts[0];
+        String operator = parts[1];
+        String value = parts[2];
+
+        statement += attribute + operator + "?;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            prepSt.setInt(1, Integer.parseInt(value));
+            System.out.println(prepSt.toString());
+            rs = prepSt.executeQuery();
+            printResultSet(rs);
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+    void registerProperty(String[] options){
+        if(!checkPermissions(UserType.MANAGER, "rgsproperty")) {
+            return;
+        }
+
+        if(options == null){
+            System.out.println("Error: not enough parameters");
+            return;
+        }
+
+        String statement = "INSERT INTO property (";
+
+        String[] parts;
+
+        for(int i = 0; i < options.length; i++) {
+
+            if(i > 0){
+                statement += ", ";
+            }
+            parts = parseConditional(options[i]);
+            statement += parts[0];
+        }
+
+        statement += ") VALUES (";
+
+        for(int i = 0; i < options.length; i++) {
+
+            if(i > 0){
+                statement += ",";
+            }
+            statement += "?";
+        }
+
+        statement += ");";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            int j;
+            for(j = 1; j <= options.length; j++) {
+                parts = parseConditional(options[j-1]);
+                switch (parts[0]) {
+                    case "price":
+                        prepSt.setObject(j, parts[2], Types.OTHER);
+                        break;
+                    case "locationID":
+                        prepSt.setInt(j, Integer.parseInt(parts[2]));
+                        break;
+                    case "squareFoot":
+                        prepSt.setObject(j, parts[2], Types.DECIMAL);
+                        break;
+                    case "forSale":
+                        prepSt.setBoolean(j, Boolean.parseBoolean(parts[2]));
+                        break;
+                    default:
+                        throw new SQLException("Error: unknown attribute given");
+                }
+            }
             rs = prepSt.executeQuery();
             printResultSet(rs);
         } catch(SQLException ex1){
