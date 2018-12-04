@@ -61,6 +61,12 @@ public class QueryProcessor {
             case "agentPrimaryOffice":
                 agentPrimaryOffice();
                 break;
+            case "rgsoffice":
+                registerOffice(options);
+                break;
+            case "uoffice":
+                updateOffice(options);
+                break;
             default:
                 System.out.println("Error: unknown command");
                 break;
@@ -750,6 +756,124 @@ public class QueryProcessor {
         try{
             prepSt = this.connection.prepareStatement(statement);
             //fill in ? if needed
+            rs = prepSt.executeQuery();
+            printResultSet(rs);
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+    void registerOffice(String[] options){
+        if(!checkPermissions(UserType.MANAGER, "rgsoffice")) {
+            return;
+        }
+
+        String statement = "INSERT INTO office (";
+
+        String[] parts1 = parseConditional(options[0]);
+        String attribute1 = parts1[0];
+        String value1 = parts1[2];
+        statement += attribute1 + ", ";
+
+        String[] parts2 = parseConditional(options[1]);
+        String attribute2 = parts2[0];
+        String value2 = parts2[2];
+        statement += attribute2 +") ";
+
+        statement += "VALUES (?,?,?);";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            switch (attribute1) {
+                case "phoneNum":
+                    prepSt.setString(1, value1);
+                    break;
+                case "locationID":
+                    prepSt.setInt(1, Integer.parseInt(value1));
+                    break;
+                default:
+                    throw new SQLException("Error: unknown attribute given");
+            }
+            switch (attribute2) {
+                case "phoneNum":
+                    prepSt.setString(2, value2);
+                    break;
+                case "locationID":
+                    prepSt.setInt(2, Integer.parseInt(value2));
+                    break;
+                default:
+                    throw new SQLException("Error: unknown attribute given");
+            }
+            prepSt.setBoolean(3, true);
+            rs = prepSt.executeQuery();
+            printResultSet(rs);
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+    void updateOffice(String[] options){
+        if(!checkPermissions(UserType.MANAGER, "uoffice")) {
+            return;
+        }
+
+        String statement = "UPDATE office SET ";
+
+        String[] parts1 = parseConditional(options[0]);
+        String attribute = parts1[0];
+        String operator = parts1[1];
+        String value = parts1[2];
+
+        String[] parts2;
+
+        for(int i = 1; i < options.length; i++) {
+
+            if(i > 1){
+                statement += ", ";
+            }
+            parts2 = parseConditional(options[i]);
+            statement += parts2[0] + parts2[1] + "?";
+        }
+
+        statement += " WHERE " + attribute + operator + "?;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            int j;
+            for(j = 1; j < options.length; j++) {
+                parts2 = parseConditional(options[i]);
+                switch (parts2[0]) {
+                    case "phoneNum":
+                        prepSt.setString(j, parts2[2]);
+                        break;
+                    case "locationID":
+                        prepSt.setInt(j, Integer.parseInt(parts2[2]));
+                        break;
+                    case "active":
+                        prepSt.setBoolean(j, Boolean.parseBoolean(parts2[2]));
+                        break;
+                    default:
+                        throw new SQLException("Error: unknown attribute given");
+                }
+            }
+            System.out.println(prepSt.toString());
+            prepSt.setInt(j, Integer.parseInt(value));
             rs = prepSt.executeQuery();
             printResultSet(rs);
         } catch(SQLException ex1){
