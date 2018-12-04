@@ -857,7 +857,7 @@ public class QueryProcessor {
             prepSt = this.connection.prepareStatement(statement);
             int j;
             for(j = 1; j < options.length; j++) {
-                parts2 = parseConditional(options[i]);
+                parts2 = parseConditional(options[j]);
                 switch (parts2[0]) {
                     case "phoneNum":
                         prepSt.setString(j, parts2[2]);
@@ -872,7 +872,6 @@ public class QueryProcessor {
                         throw new SQLException("Error: unknown attribute given");
                 }
             }
-            System.out.println(prepSt.toString());
             prepSt.setInt(j, Integer.parseInt(value));
             rs = prepSt.executeQuery();
             printResultSet(rs);
