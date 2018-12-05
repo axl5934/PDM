@@ -79,6 +79,21 @@ public class QueryProcessor {
             case "rgsproperty":
                 registerProperty(options);
                 break;
+            case "uproperty":
+                registerProperty(options);
+                break;
+            case "rmvproperty":
+                registerProperty(options);
+                break;
+            case "rgsoffer":
+                registerOffer(options);
+                break;
+            case "uoffer":
+                updateOffer(options);
+                break;
+            case "rmvoffer":
+                removeOffer(options);
+                break;
             default:
                 System.out.println("Error: unknown command");
                 break;
@@ -1112,6 +1127,287 @@ public class QueryProcessor {
                         throw new SQLException("Error: unknown attribute given");
                 }
             }
+            rs = prepSt.executeQuery();
+            printResultSet(rs);
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+    void updateProperty(String[] options){
+        if(!checkPermissions(UserType.MANAGER, "uproperty")) {
+            return;
+        }
+
+        if(options == null){
+            System.out.println("Error: not enough parameters");
+            return;
+        }
+
+        String statement = "UPDATE property SET ";
+
+        String[] parts1 = parseConditional(options[0]);
+        String attribute = parts1[0];
+        String operator = parts1[1];
+        String value = parts1[2];
+
+        String[] parts2;
+
+        for(int i = 1; i < options.length; i++) {
+
+            if(i > 1){
+                statement += ", ";
+            }
+            parts2 = parseConditional(options[i]);
+            statement += parts2[0] + parts2[1] + "?";
+        }
+
+        statement += " WHERE " + attribute + operator + "?;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            int j;
+            for(j = 1; j < options.length; j++) {
+                parts2 = parseConditional(options[j]);
+                switch (parts2[0]) {
+                    case "price":
+                        prepSt.setObject(j, parts2[2], Types.OTHER);
+                        break;
+                    case "locationID":
+                        prepSt.setInt(j, Integer.parseInt(parts2[2]));
+                        break;
+                    case "squareFoot":
+                        prepSt.setObject(j, parts2[2], Types.DECIMAL);
+                        break;
+                    case "forSale":
+                        prepSt.setBoolean(j, Boolean.parseBoolean(parts2[2]));
+                        break;
+                    default:
+                        throw new SQLException("Error: unknown attribute given");
+                }
+            }
+            prepSt.setInt(j, Integer.parseInt(value));
+            rs = prepSt.executeQuery();
+            printResultSet(rs);
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+    void removeProperty(String[] options){
+        if(!checkPermissions(UserType.MANAGER, "rmvproperty")) {
+            return;
+        }
+
+        if(options == null){
+            System.out.println("Error: not enough parameters");
+            return;
+        }
+
+        String statement = "DELETE FROM property WHERE ";
+
+        String[] parts = parseConditional(options[0]);
+        String attribute = parts[0];
+        String operator = parts[1];
+        String value = parts[2];
+
+        statement += attribute + operator + "?;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            prepSt.setInt(1, Integer.parseInt(value));
+            System.out.println(prepSt.toString());
+            rs = prepSt.executeQuery();
+            printResultSet(rs);
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+    void registerOffer(String[] options){
+        if(!checkPermissions(UserType.AGENT, "rgsoffer")) {
+            return;
+        }
+
+        if(options == null){
+            System.out.println("Error: not enough parameters");
+            return;
+        }
+
+        String statement = "INSERT INTO offer (";
+
+        String[] parts;
+
+        for(int i = 0; i < options.length; i++) {
+
+            if(i > 0){
+                statement += ", ";
+            }
+            parts = parseConditional(options[i]);
+            statement += parts[0];
+        }
+
+        statement += ") VALUES (";
+
+        for(int i = 0; i < options.length; i++) {
+
+            if(i > 0){
+                statement += ",";
+            }
+            statement += "?";
+        }
+
+        statement += ");";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            int j;
+            for(j = 1; j <= options.length; j++) {
+                parts = parseConditional(options[j-1]);
+                switch (parts[0]) {
+                    case "buyerID":
+                        prepSt.setInt(j, Integer.parseInt(parts[2]));
+                        break;
+                    case "sellerID":
+                        prepSt.setInt(j, Integer.parseInt(parts[2]));
+                        break;
+                    case "propertyID":
+                        prepSt.setInt(j, Integer.parseInt(parts[2]));
+                        break;
+                    default:
+                        throw new SQLException("Error: unknown attribute given");
+                }
+            }
+            rs = prepSt.executeQuery();
+            printResultSet(rs);
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+    void updateOffer(String[] options){
+        if(!checkPermissions(UserType.AGENT, "uoffer")) {
+            return;
+        }
+
+        if(options == null){
+            System.out.println("Error: not enough parameters");
+            return;
+        }
+
+        String statement = "UPDATE property SET ";
+
+        String[] parts1 = parseConditional(options[0]);
+        String attribute = parts1[0];
+        String operator = parts1[1];
+        String value = parts1[2];
+
+        String[] parts2;
+
+        for(int i = 1; i < options.length; i++) {
+
+            if(i > 1){
+                statement += ", ";
+            }
+            parts2 = parseConditional(options[i]);
+            statement += parts2[0] + parts2[1] + "?";
+        }
+
+        statement += " WHERE " + attribute + operator + "?;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            int j;
+            for(j = 1; j < options.length; j++) {
+                parts2 = parseConditional(options[j]);
+                switch (parts2[0]) {
+                    case "priceOffer":
+                        prepSt.setObject(j, parts2[2], Types.OTHER);
+                        break;
+                    case "buyerID":
+                        prepSt.setInt(j, Integer.parseInt(parts2[2]));
+                        break;
+                    case "sellerID":
+                        prepSt.setInt(j, Integer.parseInt(parts2[2]));
+                        break;
+                    case "locationID":
+                        prepSt.setInt(j, Integer.parseInt(parts2[2]));
+                        break;
+                    default:
+                        throw new SQLException("Error: unknown attribute given");
+                }
+            }
+            prepSt.setInt(j, Integer.parseInt(value));
+            rs = prepSt.executeQuery();
+            printResultSet(rs);
+        } catch(SQLException ex1){
+            System.out.println(ex1.getMessage());
+        } finally {
+            try {
+                closeSQL(prepSt, rs);
+            } catch (SQLException ex2){
+                System.out.println(ex2.getMessage());
+            }
+        }
+    }
+
+    void removeOffer(String[] options){
+        if(!checkPermissions(UserType.AGENT, "rmvoffer")) {
+            return;
+        }
+
+        if(options == null){
+            System.out.println("Error: not enough parameters");
+            return;
+        }
+
+        String statement = "DELETE FROM offer WHERE ";
+
+        String[] parts = parseConditional(options[0]);
+        String attribute = parts[0];
+        String operator = parts[1];
+        String value = parts[2];
+
+        statement += attribute + operator + "?;";
+
+        PreparedStatement prepSt = null;
+        ResultSet rs = null;
+        try{
+            prepSt = this.connection.prepareStatement(statement);
+            prepSt.setInt(1, Integer.parseInt(value));
+            System.out.println(prepSt.toString());
             rs = prepSt.executeQuery();
             printResultSet(rs);
         } catch(SQLException ex1){
